@@ -1,6 +1,7 @@
 package com.rayshan.employeemgmt.config;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -11,19 +12,17 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
     private static final String[] AUTH_WHITELIST = {"/api/test/**", "/h2-console", "/h2-console/**"};
-    private static final String[] ADMIN_ONLY_URL = {"/api/employees/**"};
-
-    private static final String[] USER_ONLY_URL = {"/api/employees/**"};
 
     @Bean
     public SecurityFilterChain getSecurityFilter(HttpSecurity http) throws Exception {
         http.formLogin();
 
-        // ---- Enable this -----
         http.authorizeRequests()
                 .antMatchers(AUTH_WHITELIST).permitAll()
-                .antMatchers(ADMIN_ONLY_URL).hasRole("ADMIN")
-                .antMatchers(USER_ONLY_URL).hasRole("USER")
+                .antMatchers("/ui/**").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.POST, "/api/v1/employees").hasAnyRole("ADMIN", "USER")
+                .antMatchers(HttpMethod.GET, "/api/v1/employees").hasRole("ADMIN")
+                .antMatchers( "/api/v1/employees/**").hasRole("ADMIN") // Admin can do UPDATE/DELETE by id
                 .anyRequest().authenticated();
 
         // Without disabling CSRF, you will get 403 for POST/PUT/DELETE calls.
